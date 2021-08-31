@@ -1,0 +1,5 @@
+This package contains various Tcl procedures that are sufficiently useful I keep
+auto-cargo-culting them into new programs all the time. While it's written to be
+[package require]d as one unit, individual files follow individual themes and
+can be cargo-culted themselves. Documentation is inline alongside individual
+procedures.
