@@ -9,6 +9,16 @@ proc sql_name {str} {
 	return \"[string map [list \" \"\"] $str]\"
 }
 
+# Quote a string as an SQL quoted identifier, treating the first dot as the
+# separator between the table and column names.
+proc sql_column {str} {
+	if {[set pivot [string first . $str]] >= 0} {
+		return [sql_name [string range $str 0 $pivot-1]].[sql_name [string range $str $pivot+1 end]]
+	} else {
+		return [sql_name $str]
+	}
+}
+
 # Quote a string as a SQL value (with sqlite json1's QUOTE() function)
 proc sql_val {db str} {
 	return [$db onecolumn {
