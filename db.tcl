@@ -19,15 +19,15 @@ proc sql_val {db str} {
 # Configure the sqlite database $db according to upstream recommendations for
 # sane behavior as far as possible: enable foreign keys, clamp down on funky
 # dangerous stuff in schemas, and ban double-quoted string literals.
-proc make_sane {db} {
-	$dbcmd eval {
+proc make_sane {db {sqlite_version 9001}} {
+	$db eval {
 		PRAGMA trusted_schema = 0;
 		PRAGMA foreign_keys = ON;
 	}
 	if {[package vsatisfies $sqlite_version 3.30.0]} {
-		$dbcmd config defensive 1
-		$dbcmd config dqs_dml 0;
-		$dbcmd config dqs_ddl 0;
+		$db config defensive 1
+		$db config dqs_dml 0;
+		$db config dqs_ddl 0;
 	} else {
 		puts {warning: this version of sqlite doesn't support $db config}
 	}
