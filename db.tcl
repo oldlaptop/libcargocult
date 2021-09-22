@@ -34,7 +34,7 @@ proc make_sane {db {sqlite_version 9001}} {
 		PRAGMA trusted_schema = 0;
 		PRAGMA foreign_keys = ON;
 	}
-	if {[package vsatisfies $sqlite_version 3.30.0]} {
+	if {[package vsatisfies $sqlite_version 3.30.0-]} {
 		$db config defensive 1
 		$db config dqs_dml 0;
 		$db config dqs_ddl 0;
