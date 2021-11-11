@@ -11,14 +11,14 @@ namespace eval cargocult {
 #       puts [read $fd]
 # }
 proc with {fd as fdvar script} {
-        try {
-                uplevel 1 set $fdvar $fd
-                uplevel 1 $script
-        } on error {err opts} {
-                return -options $opts $err
-        } finally {
-                close $fd
-        }
+	try {
+		uplevel 1 set $fdvar $fd
+		uplevel 1 $script
+	} on error {err opts} {
+		return -options $opts $err
+	} finally {
+		close $fd
+	}
 }
 
 } ;# namespace eval cargocult
