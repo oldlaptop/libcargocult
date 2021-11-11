@@ -19,7 +19,7 @@ proc sql_column {str} {
 	}
 }
 
-# Quote a string as a SQL value (with sqlite json1's QUOTE() function)
+# Quote a string as a SQL value (with sqlite's QUOTE() function)
 proc sql_val {db str} {
 	return [$db onecolumn {
 		SELECT QUOTE(:str)
