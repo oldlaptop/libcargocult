@@ -62,13 +62,17 @@ proc make_sane {db {sqlite_version 9001}} {
 # the values of field as column names, and their values for each value of
 # record_key as column values.
 #
-# projection is a list of (quoted as necessary) SQL fields to include in the
-# query's projection alongside the key/value columns; it should include at
-# least record_key, since a DISTINCT query is generated.
+# projection is a list of (quoted as necessary) SQL expressions to include in
+# the query's projection alongside the key/value columns; it should include at
+# least record_key, since a DISTINCT query is generated. As will become a
+# theme, this is substituted directly into the query and may be an
+# arbitrary expression, or a Bobby Tables shenanigan.
 #
 # fields is a list of values of foo.field to include in the projection; this
 # should be the raw values only, as might be returned by something like
-# [db eval {SELECT DISTINCT field FROM foo}] (where db is an sqlite3 handle)
+# [db eval {SELECT DISTINCT field FROM foo}] (where db is an sqlite3 handle).
+# These will be included in the result set as quoted aliases, and (unlike
+# the rest of this proc's arguments) are as safe as sql_name is.
 #
 # root is the name of the table from which to project all these values; for
 # the schema above, you'd pass foo. If applicable this must be quoted: it is
