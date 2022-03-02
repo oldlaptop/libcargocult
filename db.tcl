@@ -19,7 +19,10 @@ proc sql_column {str} {
 	}
 }
 
-# Quote a string as a SQL value (with sqlite's QUOTE() function)
+# Quote a string as a SQL value (with sqlite's QUOTE() function); note that
+# SQLite is sensitive to Tcl's internal representations, i.e. this proc violates
+# EIAS. Consider [string cat $str] or perhaps [tcl::mathfunc::int $str] and
+# friends for maximum consistency in the SQL-level type of the result.
 proc sql_val {db str} {
 	return [$db onecolumn {
 		SELECT QUOTE(:str)
