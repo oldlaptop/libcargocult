@@ -120,6 +120,7 @@ proc kv2table {projection fields root record_key fieldexpr valexpr {where {TRUE}
 
 	append sql "\n\t[join $projection ",\n\t"]\n"
 
+	# Indentation is meant to appear correct in the output, not in the source.
 	append sql [subst -nocommands -nobackslashes {
 FROM
 	$root AS "root" JOIN (
