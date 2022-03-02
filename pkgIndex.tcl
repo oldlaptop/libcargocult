@@ -1,4 +1,4 @@
-eval [pkg::create -name cargocult -version 0.3 \
+eval [pkg::create -name cargocult -version 0.4 \
 	-source cargocult.tcl \
 	-source db.tcl \
 	-source fs.tcl \
