@@ -43,4 +43,103 @@ proc make_sane {db {sqlite_version 9001}} {
 	}
 }
 
+# Suppose we have a table table (or in principle a subquery or something) with
+# a key-value-style schema of this rough form:
+#
+# CREATE TABLE foo (
+#     record_key INTEGER,
+#     field ANY,
+#     val ANY,
+#
+#     UNIQUE (record_key, field)
+# )
+#
+# kv2table is intended to generate a query on this table presenting it with a
+# more relational-style schema, with record_key as the (pseudo-)primary key,
+# the values of field as column names, and their values for each value of
+# record_key as column values.
+#
+# projection is a list of (quoted as necessary) SQL fields to include in the
+# query's projection alongside the key/value columns; it should include at
+# least record_key, since a DISTINCT query is generated.
+#
+# fields is a list of values of foo.field to include in the projection; this
+# should be the raw values only, as might be returned by something like
+# [db eval {SELECT DISTINCT field FROM foo}] (where db is an sqlite3 handle)
+#
+# root is the name of the table from which to project all these values; for
+# the schema above, you'd pass foo. If applicable this must be quoted: it is
+# substituted into the query with blithe disregard. The author expects both
+# projecting from subqueries and Bobby Tables shenanigans to work as
+# expected/feared. The whole thing will be aliased as "root".
+#
+# record_key is a column name to be projected as the pseudo-key, as in
+# foo.record_key above. This should be quoted as appropriate; an arbitrary
+# expression will not work, since it is substituted in a projection, as a
+# field of "root", and in a GROUP BY clause.
+#
+# fieldexpr is an SQL expression to be projected as the column name in the
+# query; that is, 'SELECT DISTINCT $fieldexpr' should return some superset of
+# the elements of the $fields parameter. Would be "field" for foo above.
+#
+# valexpr is an SQL expression to be projected as a column value in the query;
+# that is, the column named `spam` in the final query will contain the values
+# of something like `SELECT $valexpr FROM $root WHERE $fieldexpr = 'spam'`.
+# Woudl be "val" for foo above.
+#
+# where is the expression to be used in the WHERE clause for the whole query;
+# for example one could limit it to a certain subset of record_keys in foo.
+# above. Defaults to TRUE.
+#
+# parser is an SQLite database handle, which must support the JSON1 extension.
+# If not specified, this proc will attempt to set up its own.
+#
+# Requires SQLite with JSON1 enabled. The generated query uses SQLite's JSON1
+# JSON_GROUP_OBJECT function; trivial modification to allow the use of
+# other RDBMSes' object-yielding aggregates in its place is left as an
+# exercise to the cargo-cultist.
+proc kv2table {projection fields root record_key fieldexpr valexpr {where {TRUE}} {parser {}} } {
+	set teardown 0
+	if {$parser eq {}} {
+		set teardown 1
+		set version [package require sqlite3]
+		set parser [gensym]
+		sqlite3 $parser :memory:
+		make_sane $parser $version
+	}
+
+	set sql [subst -nocommands \
+		{SELECT DISTINCT}
+	]
+
+	foreach field $fields {
+		set sqlfield [cargocult::sql_name $field]
+		set jsonfield [$parser onecolumn {SELECT JSON_QUOTE(:field)}]
+		lappend projection [subst -nocommands {JSON_EXTRACT("objectified"."obj", '\$.$jsonfield') AS $sqlfield}]
+	}
+
+	append sql "\n\t[join $projection ",\n\t"]\n"
+
+	append sql [subst -nocommands -nobackslashes {
+FROM
+	$root AS "root" JOIN (
+		SELECT $record_key AS "key", JSON_GROUP_OBJECT(
+			$fieldexpr, $valexpr
+		) AS "obj"
+		FROM $root
+		GROUP BY $record_key
+	) AS "objectified" ON (
+		"objectified"."key" = "root".$record_key
+	)
+}]
+
+	append sql "WHERE $where;"
+
+	if {$teardown} {
+		$parser close
+	}
+
+	return $sql
+}
+
 } ;# namespace eval cargocult
