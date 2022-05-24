@@ -29,6 +29,22 @@ proc sql_val {db str} {
 	}]
 }
 
+# Verify that a string is a valid :bind_variable, and if so return it with the
+# : prepended. If it is not valid, raise an error. The definition of "valid" is
+# that it matches ([A-Za-z0-9_]+). It is possible that some databases will raise
+# errors for variable names that do not meet this criterion, but it is believed
+# that variable names meeting this criterion are (within reasonable contexts)
+# not serious injection risks. All the same, if you inject untrusted data
+# through this procedure, you deserve what happens to you. Suggested use is in
+# conjunction with [cargocult::gensym].
+proc sql_bindvar {str} {
+	if {[regexp {[A-Za-z0-9_]+} $str]} {
+		return :$str
+	} else {
+		return -code error "not a valid bindvar name: $str"
+	}
+}
+
 # Configure the sqlite database $db according to upstream recommendations for
 # sane behavior as far as possible: enable foreign keys, clamp down on funky
 # dangerous stuff in schemas, and ban double-quoted string literals.
