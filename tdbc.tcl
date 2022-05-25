@@ -10,6 +10,10 @@ namespace eval cargocult {
 # for managing the cache manually yet exists; for example, if some outside force
 # closes its prepared statements, or the database connection goes away, or some
 # other disaster occurs, the only recourse is to destroy and recreate the cache.
+#
+# Most tdbc::connection methods not related to SQL execution or statement
+# and resultset management are forwarded to the underlying connection for
+# convenience.
 oo::class create statementcache {
 	variable connection
 	variable statements
@@ -17,6 +21,20 @@ oo::class create statementcache {
 	constructor {new_connection} {
 		set connection $new_connection
 		set statements [dict create]
+
+		foreach method {
+			foreignkeys
+			primarykeys
+			tables
+			columns
+			begintransaction
+			commit
+			rollback
+			transaction
+		} {
+			oo::objdefine [self] forward \
+				$method $connection $method
+		}
 	}
 
 	# Closes any prepared statements managed by the cache, but leaves the
@@ -39,7 +57,11 @@ oo::class create statementcache {
 	# If no arguments other than $sql are passed, returns the result of
 	# calling the prepared statement's allrows method in the caller's scope.
 	# Otherwise, returns the result of calling the statement's foreach
-	# method, passing all arguments to it unchanged.
+	# method, passing all arguments to it unchanged (all but the last before
+	# the /sqlcode/ argument, and the last after it).
+	#
+	# Fuller emulation of either SQLite [$db eval] or TDBC [$db foreach]
+	# syntax might happen if the author someday needs it.
 	method eval {sql args} {
 		if {![dict exists $statements $sql]} {
 			dict set statements $sql [$connection prepare $sql]
@@ -47,7 +69,7 @@ oo::class create statementcache {
 		if {[llength $args] == 0} {
 			uplevel 1 [list [dict get $statements $sql] allrows]
 		} else {
-			uplevel 1 [list [dict get $statements $sql] foreach {*}$args]
+			uplevel 1 [list [dict get $statements $sql] foreach {*}[lrange $args 0 end-1] $sql [lindex $args end]]
 		}
 	}
 
