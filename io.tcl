@@ -21,4 +21,10 @@ proc with {fd as fdvar script} {
 	}
 }
 
+# Debugging utility: behaves like puts, but returns the string written.
+proc puts_through {args} {
+	puts {*}$args
+	return [lindex $args end]
+}
+
 } ;# namespace eval cargocult
