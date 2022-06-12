@@ -7,5 +7,8 @@ eval [pkg::create -name cargocult -version 0.4 \
 	-source meta.tcl \
 	-source tdbc.tcl]
 
-eval [pkg::create -name cargocult::tk -version 0.1 \
+eval [pkg::create -name cargocult::tk -version 0.2 \
 	-source tk.tcl]
+
+eval [pkg::create -name cargocult::widgets -version 0.1 \
+	-source widgets.tcl]
