@@ -114,4 +114,150 @@ snit::widget optionlist {
 	}
 }
 
+# Generic widget that builds up a single-column list of some other kind of
+# widget, which should ideally have some self-destruct mechanism. Generates
+# <<NewDynrow>> when a new row is added to the list, and <<RmDynrow>> when one
+# of its rows is destroyed.
+snit::widget dynrows {
+	hulltype ttk::labelframe
+	delegate option * to hull
+	delegate method * to hull
+
+	option -newrow -default {ttk::label}
+
+	option -rowopts \
+		-default {-text "You should change -newrow and -rowopts." } \
+		-configuremethod Set_rowopts
+	method Set_rowopts {opt val} {
+		foreach row [$self rows] {
+			$row configure {*}$val
+		}
+		set options($opt) $val
+	}
+
+	option -noun -default thing
+
+	component cv
+	component scroll
+	component rowsframe
+
+	variable scrolltag
+
+	constructor {args} {
+		set scrolltag [gensym scrolltag]
+
+		install cv using canvas $win.cv \
+			-yscrollcommand [list $win.scroll set]
+		install rowsframe using ttk::frame $cv.aggrows
+		install scroll using ttk::scrollbar $win.scroll \
+			-orient vertical -command [list $win.cv yview]
+
+		$cv create window [tk scaling] [tk scaling] \
+			-anchor nw -window $rowsframe -tags rowsframe
+
+		bind $cv <Configure> [mymethod Resize canvas %w %h]
+		bind $rowsframe <Configure> [mymethod Resize frame %w %h]
+
+		$self configurelist $args
+
+		ttk::button $win.add -text "Add [$self cget -noun]" -style Toolbutton -command [mymethod add_row]
+
+		grid $cv      $scroll -sticky nsew
+		grid $win.add -       -sticky se
+		grid rowconfigure $win 0 -weight 1
+		grid columnconfigure $win 0 -weight 1
+		grid columnconfigure $rowsframe 0 -weight 1
+
+		foreach window [concat $win [winfo children $win] $rowsframe [winfo children $rowsframe]] {
+			$self Set_scrolltarget $window
+		}
+
+		install_scrollbinds $scrolltag [list $cv yview scroll :dir units]
+	}
+
+	# Add a new row to the list. Any arguments are taken as ad-hoc options
+	# for this particular row.
+	method add_row {args} {
+		grid [set newrow [{*}[$self cget -newrow] $rowsframe.row[gensym dynrow] {*}[$self cget -rowopts] {*}$args]] \
+			-sticky ew -padx [tk scaling] -pady [tk scaling]
+		# Jump to bottom
+		after idle [list $cv yview moveto 1]
+		$self Set_scrolltarget $newrow
+
+		event generate $win <<NewDynrow>>
+		bind $newrow <Destroy> [list event generate $win <<RmDynrow>>]
+	}
+
+	method rows {} {
+		winfo children $rowsframe
+	}
+
+	method Resize {window newwidth newheight} {
+		if {$window eq "canvas"} {
+			$cv itemconfigure rowsframe -width [- $newwidth 4]
+		} else {
+			$cv configure -scrollregion [list 0 0 $newwidth $newheight]
+		}
+	}
+
+	method Set_scrolltarget {window} {
+		bindtags $window [linsert [bindtags $window] 1 $scrolltag]
+		catch {$window Add_scrolltags $scrolltag} err
+	}
+}
+
+# Example row-widget for dynrows, used to specify a single string key/value pair
+snit::widget kvpair {
+	hulltype ttk::frame
+
+	component label
+	component keyen
+	component valen
+
+	delegate method * to hull
+	delegate option * to hull
+
+	delegate option -text to label
+	delegate option -key_validate to keyen as -validate
+	delegate option -value_validate to valen as -validate
+	delegate option -key_validatecommand to keyen as -validatecommand
+	delegate option -value_validatecommand to valen as -validatecommand
+	delegate option -key_invalidcommand to keyen as -invalidcommand
+	delegate option -value_invalidcommand to valen as -invalidcommand
+
+	option -key
+	option -value
+
+	constructor {args} {
+		install label using ttk::label $win.label
+
+		install keyen using ttk::entry $win.keyen -textvariable [
+			myvar options(-key)
+		]
+		install valen using ttk::entry $win.valen -textvariable [
+			myvar options(-value)
+		]
+
+		ttk::button $win.destroy -text X -width 0 -command [list destroy $win]
+
+		grid $label $win.keyen $win.valen $win.destroy -sticky nsew
+		grid rowconfigure $win 0 -weight 1
+		grid columnconfigure $win {1 2} -weight 1
+		pad_grid_widgets [winfo children $win]
+
+		$self configurelist $args
+	}
+}
+
+proc test_dynrows {{parent {}}} {
+	if {$parent eq {}} {
+		set parent [toplevel .[gensym test_dynrows]]
+	}
+	grid [set ret [dynrows $parent.dynrows -newrow kvpair -rowopts {}]] -sticky nsew
+	grid rowconfigure $parent 0 -weight 1
+	grid columnconfigure $parent 0 -weight 1
+
+	return $ret
+}
+
 } ;# namespace eval cargocult
