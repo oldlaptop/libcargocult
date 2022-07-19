@@ -219,6 +219,73 @@ snit::widget kvpair {
 	}
 }
 
+# Light wrapper around ttk::notebook adding a close button to its tabs.
+# Inspiration, and style layout definition, from Georgios Petasis on the wiki
+# (heading "Adding an icon to notebook tabs (i.e., close icon)"):
+#
+# https://wiki.tcl-lang.org/page/ttk%3A%3Anotebook
+snit::widgetadaptor cnotebook {
+	delegate option * to hull
+	delegate method * to hull
+
+	typevariable X
+
+	typeconstructor {
+		# It's a 16x16px black X with 8px of padding on the left.
+		# (see x.sng)
+		set X [image create photo -data \
+{iVBORw0KGgoAAAANSUhEUgAAABgAAAAQCAYAAAAMJL+VAAABg2lDQ1BJQ0MgcHJvZmlsZQAAKJF9
+kT1Iw0AcxV9TpSIVh3YQcchQnSxIFXXUKhShQqgVWnUwufQLmhiSFBdHwbXg4Mdi1cHFWVcHV0EQ
+/ABxdHJSdJES/5cUWsR4cNyPd/ced+8AoVFlmtU1Bmi6bWZSSTGXXxFDrwghAiCBKZlZxqwkpeE7
+vu4R4OtdnGf5n/tz9KkFiwEBkXiGGaZNvE48uWkbnPeJo6wsq8TnxKMmXZD4keuKx2+cSy4LPDNq
+ZjNzxFFisdTBSgezsqkRTxDHVE2nfCHnscp5i7NWrbHWPfkLwwV9eYnrNIeQwgIWIUGEghoqqMJG
+nFadFAsZ2k/6+Addv0QuhVwVMHLMYwMaZNcP/ge/u7WK4wkvKZwEul8c52MYCO0CzbrjfB87TvME
+CD4DV3rbv9EApj9Jr7e12BHQvw1cXLc1ZQ+43AEGngzZlF0pSFMoFoH3M/qmPBC5BXpXvd5a+zh9
+ALLUVfoGODgERkqUvebz7p7O3v490+rvB7YycsKUE6wiAAAABmJLR0QAAAAAAAD5Q7t/AAAACXBI
+WXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH5gcTADQD3mbUEwAAABl0RVh0Q29tbWVudABDcmVhdGVk
+IHdpdGggR0lNUFeBDhcAAABlSURBVDiNzZPbEgAQCETl//+ZV6bblprRE9PWEYuGH+tYE6C/aiZY
+IMEgTRTgQVguPLJRK2pQgAdRcxGA1kgKYotCCKmbAgjrl3FRKL67otZHbrVp60dDmqvajIusQz3b
+FJn40mzYYBUUts2hfAAAAABJRU5ErkJggg==}]
+
+		# Arrange our styles. We'd really rather not change all the
+		# other ttk::notebooks an application may or may not have.
+
+		# Clone TNotebook...
+		ttk::style layout CNotebook [ttk::style layout TNotebook]
+		ttk::style map CNotebook {*}[ttk::style map TNotebook]
+		ttk::style map CNotebook.Tab {*}[ttk::style map TNotebook.Tab]
+
+		# ...and separate the image and label, so we can independently
+		# react to clicks on the image.
+		ttk::style layout CNotebook.Tab {
+			Notebook.tab -children {
+				Notebook.padding -side top -children {
+					Notebook.focus -side top -children {
+						Notebook.text -side left
+						Notebook.image -side right
+					}
+				}
+			}
+		}
+	}
+
+	constructor {args} {
+		installhull using ttk::notebook -style CNotebook
+
+		bind $win <ButtonPress-1>  +[mymethod click %x %y]
+	}
+
+	method add {args} {
+		$hull add [lindex $args 0] -image $X {*}[lrange $args 1 end]
+	}
+
+	method click {x y} {
+		if {[$self identify element $x $y] eq {image}} {
+			destroy [lindex [$self tabs] [$self identify tab $x $y]]
+		}
+	}
+}
+
 proc test_dynrows {{parent {}}} {
 	if {$parent eq {}} {
 		set parent [toplevel .[gensym test_dynrows]]

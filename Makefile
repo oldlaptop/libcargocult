@@ -1,5 +1,15 @@
 .POSIX:
 
+.SUFFIXES: .sng .png .png_b64
+
+# Utility targets: `make foo.png_b64` converts an SNG source file into base64
+# suitable for inclusion inline in a Tcl source file. For those unfamiliar with
+# SNG: http://sng.sf.net
+.sng.png:
+	sng $<
+.png.png_b64:
+	base64 $< | tee $@
+
 PREFIX = /usr/local
 LIBPATH = $(PREFIX)/lib/tcl
 
