@@ -271,6 +271,7 @@ FJn40mzYYBUUts2hfAAAAABJRU5ErkJggg==}]
 
 	constructor {args} {
 		installhull using ttk::notebook -style CNotebook
+		$self configurelist -args
 
 		bind $win <ButtonPress-1>  +[mymethod click %x %y]
 	}
