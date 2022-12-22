@@ -57,8 +57,7 @@ oo::class create statementcache {
 	# If no arguments other than $sql are passed, returns the result of
 	# calling the prepared statement's allrows method in the caller's scope.
 	# Otherwise, returns the result of calling the statement's foreach
-	# method, passing all arguments to it unchanged (all but the last before
-	# the /sqlcode/ argument, and the last after it).
+	# method, passing all arguments to it unchanged.
 	#
 	# Fuller emulation of either SQLite [$db eval] or TDBC [$db foreach]
 	# syntax might happen if the author someday needs it.
@@ -69,7 +68,7 @@ oo::class create statementcache {
 		if {[llength $args] == 0} {
 			uplevel 1 [list [dict get $statements $sql] allrows]
 		} else {
-			uplevel 1 [list [dict get $statements $sql] foreach {*}[lrange $args 0 end-1] $sql [lindex $args end]]
+			uplevel 1 [list [dict get $statements $sql] foreach {*}[lrange $args 0 end-1]  [lindex $args end]]
 		}
 	}
 
