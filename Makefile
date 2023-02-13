@@ -18,3 +18,10 @@ CARGO = pkgIndex.tcl cargocult.tcl db.tcl fs.tcl io.tcl math.tcl meta.tcl tdbc.t
 install:
 	mkdir -p $(LIBPATH)/libcargocult
 	cp $(CARGO) $(LIBPATH)/libcargocult
+
+install_magicsplat.tclapp: install_magicsplat.tclapp.in
+	<$? sed "s/@CARGO@/$(CARGO)/" >$@
+
+# Windows-"friendly" source bundle
+libcargocult.zip: install_magicsplat.tclapp $(CARGO)
+	zip $@ $?

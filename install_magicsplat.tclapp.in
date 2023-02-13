@@ -1,0 +1,32 @@
+# Ugly hack to install the library in the same user-writable Tcl installation
+# that's executing this script; meant for use with Magicsplat, but can work in
+# principle with any Tcl installation, especially one following the normal UNIX
+# convention ($PREFIX/bin, with $PREFIX/lib in auto_path).
+
+try {
+	set CARGO [list @CARGO@]
+
+	set guessed_root [file dirname [file dirname [info nameofexecutable]]]
+
+	# Prefer $PREFIX/lib if it's going to work...
+	if {[set libdir [file join $guessed_root lib]] ni $auto_path} {
+		# ...but if it won't, find something that will
+		set libdir [lindex $auto_path end]
+	}
+
+	set target [file join $libdir libcargocult]
+	file mkdir $target
+
+	foreach file $CARGO {
+		puts "copying $file to $target..."
+		file copy -force -- $file $target
+	}
+
+	puts "installation complete!\n"
+} on error {err opts} {
+	puts $err\n
+} finally {
+	puts "press enter to exit..."
+}
+
+gets stdin
