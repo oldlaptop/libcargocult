@@ -2,6 +2,9 @@
 
 package require tdbc
 
+package require cargocult
+package provide cargocult::tdbc 0.1
+
 namespace eval cargocult {
 
 # SQLite-style prepared statement cache for TDBC. The constructor expects an
