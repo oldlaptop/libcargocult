@@ -59,19 +59,22 @@ oo::class create statementcache {
 	#
 	# If no arguments other than $sql are passed, returns the result of
 	# calling the prepared statement's allrows method in the caller's scope.
-	# Otherwise, returns the result of calling the statement's foreach
-	# method, passing all arguments to it unchanged.
+	# Otherwise, returns the result of calling the specified method on the
+	# statement, passing all further arguments to it unchanged.
 	#
 	# Fuller emulation of either SQLite [$db eval] or TDBC [$db foreach]
 	# syntax might happen if the author someday needs it.
-	method eval {sql args} {
+	method eval {sql {method allrows} args} {
 		if {![dict exists $statements $sql]} {
 			dict set statements $sql [$connection prepare $sql]
 		}
-		if {[llength $args] == 0} {
-			uplevel 1 [list [dict get $statements $sql] allrows]
+		if {[llength $args] > 0} {
+			uplevel 1 [list [dict get $statements $sql] $method {*}[lrange $args 0 end-1]  [lindex $args end]]
 		} else {
-			uplevel 1 [list [dict get $statements $sql] foreach {*}[lrange $args 0 end-1]  [lindex $args end]]
+			# Supplying empty parameters with the {*} construct
+			# above causes TDBC not to look for parameters among the
+			# caller's in-scope variables.
+			uplevel 1 [list [dict get $statements $sql] $method]
 		}
 	}
 
