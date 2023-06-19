@@ -62,6 +62,21 @@ proc make_sane {db {sqlite_version 9001}} {
 	}
 }
 
+# Predicate returning true if SQLite with the JSON1 functions is available, and
+# false otherwise.
+proc have_json1 {} {
+	package require sqlite3
+
+	set db [gensym have_json1]
+	sqlite3 $db :memory:
+
+	try {
+		return [expr {![catch {$db eval {SELECT JSON('{}')}}]}]
+	} finally {
+		$db close
+	}
+}
+
 # Suppose we have a table table (or in principle a subquery or something) with
 # a key-value-style schema of this rough form:
 #
