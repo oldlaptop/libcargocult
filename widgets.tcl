@@ -298,4 +298,30 @@ proc test_dynrows {{parent {}}} {
 	return $ret
 }
 
+# ttk::treeview with matching vertical ttk::scrollbar.
+snit::widget scrolltree {
+	hulltype ttk::frame
+
+	component tree
+	component vscroll
+
+	delegate method set to vscroll
+
+	delegate method * to tree
+	delegate option * to tree
+
+	constructor {args} {
+		install tree using ttk::treeview $win.treeview \
+			-yscrollcommand [mymethod set]
+		install vscroll using ttk::scrollbar $win.vscroll \
+			-command [mymethod yview]
+
+		grid $tree $vscroll -sticky nsew
+		grid rowconfigure $win 0 -weight 1
+		grid columnconfigure $win 0 -weight 1
+
+		$self configurelist $args
+	}
+}
+
 } ;# namespace eval cargocult
