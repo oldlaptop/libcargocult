@@ -1,6 +1,6 @@
 # I/O related cargo.
 
-package require Tcl 8.6
+package require Tcl 8.6 9
 
 namespace eval cargocult {
 

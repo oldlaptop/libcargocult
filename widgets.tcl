@@ -1,9 +1,9 @@
 # Snit megawidgets of various kinds.
 
-package require Tcl 8.5 ;# {*}
-package require Tk 8.5 ;# ttk
+package require Tcl 8.5 9 ;# {*}
+package require Tk 8.5 9  ;# ttk
 
-package require snit 2.2
+package require snit 2
 
 package require cargocult
 package require cargocult::tk

@@ -1,8 +1,8 @@
 # Tk and otherwise GUI-related cargo.
 
-package require Tk 8.5 ;# May again randomly change to 8.5 if needed
+package require Tk 8.5 9
 
-package require snit 2.2
+package require snit 2
 
 package require cargocult
 package provide cargocult::tk 0.2
