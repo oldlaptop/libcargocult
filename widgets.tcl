@@ -244,6 +244,10 @@ snit::widgetadaptor cnotebook {
 		}
 	}
 
+	# Command executed when the close button is clicked, with the window's
+	# path name appended.
+	option -closecommand -default {destroy}
+
 	# It's a 16x16px black X with 8px of padding on the left.
 	# (see x.sng)
 	typevariable X \
@@ -301,7 +305,7 @@ FJn40mzYYBUUts2hfAAAAABJRU5ErkJggg==}
 
 	method click {x y} {
 		if {[$self identify element $x $y] eq {image}} {
-			destroy [lindex [$self tabs] [$self identify tab $x $y]]
+			{*}[$self cget -closecommand] [lindex [$self tabs] [$self identify tab $x $y]]
 		}
 	}
 }
