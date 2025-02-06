@@ -228,12 +228,25 @@ snit::widgetadaptor cnotebook {
 	delegate option * to hull
 	delegate method * to hull
 
-	typevariable X
+	# Image command to use for the close button; set to the empty string for
+	# a default icon.
+	option -closeicon -configuremethod Set_image
+	method Set_image {opt val} {
+		if {$val eq {}} {
+			set options($opt) ${type}::default_x
+		} elseif {$val in [image names]} {
+			set options($opt) $val
+		} else {
+			return -code error "not an image: $val"
+		}
+		foreach tab [$self tabs] {
+			$self tab $tab -image $options($opt)
+		}
+	}
 
-	typeconstructor {
-		# It's a 16x16px black X with 8px of padding on the left.
-		# (see x.sng)
-		set X [image create photo -data \
+	# It's a 16x16px black X with 8px of padding on the left.
+	# (see x.sng)
+	typevariable X \
 {iVBORw0KGgoAAAANSUhEUgAAABgAAAAQCAYAAAAMJL+VAAABg2lDQ1BJQ0MgcHJvZmlsZQAAKJF9
 kT1Iw0AcxV9TpSIVh3YQcchQnSxIFXXUKhShQqgVWnUwufQLmhiSFBdHwbXg4Mdi1cHFWVcHV0EQ
 /ABxdHJSdJES/5cUWsR4cNyPd/ced+8AoVFlmtU1Bmi6bWZSSTGXXxFDrwghAiCBKZlZxqwkpeE7
@@ -245,7 +258,10 @@ ALLUVfoGODgERkqUvebz7p7O3v490+rvB7YycsKUE6wiAAAABmJLR0QAAAAAAAD5Q7t/AAAACXBI
 WXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH5gcTADQD3mbUEwAAABl0RVh0Q29tbWVudABDcmVhdGVk
 IHdpdGggR0lNUFeBDhcAAABlSURBVDiNzZPbEgAQCETl//+ZV6bblprRE9PWEYuGH+tYE6C/aiZY
 IMEgTRTgQVguPLJRK2pQgAdRcxGA1kgKYotCCKmbAgjrl3FRKL67otZHbrVp60dDmqvajIusQz3b
-FJn40mzYYBUUts2hfAAAAABJRU5ErkJggg==}]
+FJn40mzYYBUUts2hfAAAAABJRU5ErkJggg==}
+
+	typeconstructor {
+		image create photo ${type}::default_x -data $X
 
 		# Arrange our styles. We'd really rather not change all the
 		# other ttk::notebooks an application may or may not have.
@@ -271,13 +287,16 @@ FJn40mzYYBUUts2hfAAAAABJRU5ErkJggg==}]
 
 	constructor {args} {
 		installhull using ttk::notebook -style CNotebook
+		$self configure -closeicon {}
 		$self configurelist $args
 
 		bind $win <ButtonPress-1>  +[mymethod click %x %y]
 	}
 
-	method add {args} {
-		$hull add [lindex $args 0] -image $X {*}[lrange $args 1 end]
+	method add {newwin args} {
+		$hull add $newwin \
+			-image [$self cget -closeicon] \
+			{*}$args
 	}
 
 	method click {x y} {
